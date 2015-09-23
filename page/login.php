@@ -1,143 +1,125 @@
 <?php
+	// LOGIN.PHP
+	// errori muutujad peavad enne if'i olemas olema :)
 	
-	// Loon andmebaasi ühenduse
-	require_once("../config.php");
-	$database = "if15_martin";
-	$mysqli = new mysqli($servername, $username, $password, $database);
-
-  // muuutujad errorite jaoks
 	$email_error = "";
 	$password_error = "";
-	$create_email_error = "";
-	$create_password_error = "";
-
-  // muutujad väärtuste jaoks
-	$email = "";
-	$password = "";
-	$create_email = "";
-	$create_password = "";
-
-
+	$username_error = "";
+	$reg_email_error = "";
+	$reg_password_error = "";
+	$reg_username_error = "";
+	
+	//muutujad andmebaasi väärtuste jaoks
+	$username = ""; $email = ""; $password = "";
+	$reg_username = ""; $reg_email = ""; $reg_password = "";
+	
+	//echo $_POST["email"];
+	
+	// kontrollime et keegi vajutas input nuppu
 	if($_SERVER["REQUEST_METHOD"] == "POST") {
-
-    // *********************
-    // **** LOGI SISSE *****
-    // *********************
+		
+		//************************************************************
+		//echo "keegi vajutas login nuppu";
+		
+		//vajutas login nuppu
+		//************************************************************
 		if(isset($_POST["login"])){
-
-			if ( empty($_POST["email"]) ) {
-				$email_error = "See väli on kohustuslik";
+				
+			if (empty($_POST["email"]) ) {
+				$email_error = "This field is required";
 			}else{
-        // puhastame muutuja võimalikest üleliigsetest sümbolitest
-				$email = cleanInput($_POST["email"]);
-			}
-
-			if ( empty($_POST["password"]) ) {
-				$password_error = "See väli on kohustuslik";
-			}else{
-				$password = cleanInput($_POST["password"]);
-			}
-
-      // Kui oleme siia jõudnud, võime kasutaja sisse logida
-			if($password_error == "" && $email_error == ""){
-				echo "Võib sisse logida! Kasutajanimi on ".$email." ja parool on ".$password;
+				// kõik korras
+				// test_input eemaldab pahataltikud osad
+				$email = test_input($_POST["email"]);
 				
-				$hash = hash("sha512", $password);
-				
-				$stmt = $mysqli->prepare("SELECT id, email FROM user_sample WHERE email=? AND password=?");
-				$stmt->bind_param("ss", $email, $hash);
-				
-				//muutujad tulemustele
-				$stmt->bind_result($id_from_db, $email_from_db);
-				$stmt->execute();
-				
-				//Kontrollin kas tulemusi leiti
-				if($stmt->fetch()){
-					//andmebaasis oli midagi
-						echo "Email ja parool õiged, kasutaja id=".$id_from_db;
-					}else{
-						// ei leidnud
-						echo "Valed andmed!";
 				}
 				
-				$stmt->close();
+			if (empty($_POST["username"]) ) {
+				$username_error = "This field is required";
 				
-				
-			}
-
-		} // login if end
-
-    // *********************
-    // ** LOO KASUTAJA *****
-    // *********************
-    if(isset($_POST["create"])){
-
-			if ( empty($_POST["create_email"]) ) {
-				$create_email_error = "See väli on kohustuslik";
 			}else{
-				$create_email = cleanInput($_POST["create_email"]);
+				
+				$username = test_input($_POST["username"]);
+				
+				}
+				
+			if (empty($_POST["password"]) ) {
+				$password_error = "This field is required";
+			}else{
+			
+				$password = test_input($_POST["password"]);
+				
+			}
+			// kontrollin et ei oleks ühtegi errorit
+			if($email_error == "" && $password_error ==""){
+				
+			echo "kontrollin sisselogimist ".$email." ja parool ".$password.$username;
+		
 			}
 
-			if ( empty($_POST["create_password"]) ) {
-				$create_password_error = "See väli on kohustuslik";
-			} else {
-				if(strlen($_POST["create_password"]) < 8) {
-					$create_password_error = "Peab olema vähemalt 8 tähemärki pikk!";
-				}else{
-					$create_password = cleanInput($_POST["create_password"]);
+		
+		//*************************************************************
+		// Keegi vajutas create nuppu
+		//*************************************************************
+		}elseif(isset($_POST["create"])){
+			
+			if (empty($_POST["reg_username"]) ) {
+				$reg_username_error = "This field is required";
+			}
+			
+			
+			if (empty($_POST["reg_password"]) ) {
+				$reg_password_error = "This field is required";
+			}else {
+				
+				// kui oleme siia jõudnud, siis parool ei ole tühi enam
+				// kontrollin, et oleks vähemalt 8 sümbolit pikk
+				if(strlen($_POST["reg_password"]) < 8) {
+					
+					$reg_password_error = "Password must be at least 8 characters";
+					
 				}
 			}
-
-			if(	$create_email_error == "" && $create_password_error == ""){
-				
-				// Räsi paroolist, mille salvestame andmebaasi
-				$hash = hash("sha512", $create_password);
-				
-				echo "Võib kasutajat luua! Kasutajanimi on ".$create_email." ja parool on ".$create_password." ja räsi on".$hash;
-				
-				// Salvestame andmebaasi
-				$stmt = $mysqli->prepare("INSERT INTO user_sample (email, password) VALUES (?,?)");
-				// Asendame küsimärgid, ss - s on string email, s on string password
-				$stmt->bind_param("ss", $create_email, $hash);
-				$stmt->execute();
-				$stmt->close();
+			if (empty($_POST["reg_email"]) ) {
+				$reg_email_error = "This field is required";
 			}
-
-    } // create if end
-
+		
+		}
 	}
-
-  // funktsioon, mis eemaldab kõikvõimaliku üleliigse tekstist
-  function cleanInput($data) {
-  	$data = trim($data);
-  	$data = stripslashes($data);
-  	$data = htmlspecialchars($data);
-  	return $data;
-  }
-  
-  // Paneme ühenduse kinni
-  $mysqli->close();
-
+	
+	
+	function test_input($data) {
+		// võtab ära tühikud, enterid, tabid
+		$data = trim($data);
+		// tagurpidi kaldkriipsud
+		$data = stripslashes($data);
+		// teeb htm'li tekstiks 
+		$data = htmlspecialchars($data);
+		return $data;
+}
+	
+	$page_title = "Sisselogimine";
+	$page_file_name = "login.php";
+	require_once("../header.php");
 ?>
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Login</title>
-</head>
-<body>
 
-  <h2>Log in</h2>
-  <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" method="post" >
-  	<input name="email" type="email" placeholder="E-post" value="<?php echo $email; ?>"> <?php echo $email_error; ?><br><br>
-  	<input name="password" type="password" placeholder="Parool" value="<?php echo $password; ?>"> <?php echo $password_error; ?><br><br>
-  	<input type="submit" name="login" value="Log in">
-  </form>
-
-  <h2>Create user</h2>
-  <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" method="post" >
-  	<input name="create_email" type="email" placeholder="E-post" value="<?php echo $create_email; ?>"> <?php echo $create_email_error; ?><br><br>
-  	<input name="create_password" type="password" placeholder="Parool"> <?php echo $create_password_error; ?> <br><br>
-  	<input type="submit" name="create" value="Create user">
-  </form>
-<body>
-<html>
+	<h2>Log in</h2>
+		
+		<form action="login.php" method="post" >
+			<input name="username" type="text" placeholder="username"> <?php echo $username_error; ?><br> <br>
+			<input name="email" type="email" placeholder="email"> <?php echo $email_error; ?><br> <br>
+			<input name="password" type="password" placeholder="Password"> <?php echo $password_error; ?> <br> <br>
+			<input name="login" type="submit" value="Log in"> <br> <br>
+		</form>
+	
+	<h2>Create user</h2>
+	
+		<form action="login.php" method="post" >
+			<input name="reg_username" type="text" placeholder="username"> * <?php echo $reg_username_error; ?><br> <br>
+			<input name="reg_email" type="email" placeholder="email"> * <?php echo $reg_email_error; ?><br> <br>
+			<input name="reg_password" type="password" placeholder="Password"> * <?php echo $reg_password_error; ?> <br> <br>
+			<input name="reg_password" type="password" placeholder="Insert password again"> * <?php echo $reg_password_error; ?> <br> <br>
+			<input name="create" type="submit" value="Register"> <br> <br>
+		</form>
+	
+	<?php require_once("../footer.php"); ?>
