@@ -2,6 +2,12 @@
 	// LOGIN.PHP
 	// errori muutujad peavad enne if'i olemas olema :)
 	
+	// Loon andmebaasi ühenduse
+	require_once("../../config.php");
+	$database = "if15_martin";
+	$mysqli = new mysqli($servername, $username, $password, $database);
+	
+	// muutujad errorite jaoks
 	$email_error = "";
 	$password_error = "";
 	$username_error = "";
@@ -53,7 +59,26 @@
 			// kontrollin et ei oleks ühtegi errorit
 			if($email_error == "" && $password_error ==""){
 				
-			echo "kontrollin sisselogimist ".$email." ja parool ".$password.$username;
+			$hash = hash("sha512", $password);
+			
+			$stmt = $mysqli->prepare("SELECT id, email, username FROM martin_login2 WHERE email=?, username=? AND password=?");
+			$stmt->bind_param("sss",$email, $username, $password, $hash);
+			
+			// Muutujad tulemustele
+			$stmt->bind_result($id_from_db, $username_from_db, $email_from_db);
+			$stmt->execute();
+			
+			//Kontrollin kas tulemusi leiti
+				if($stmt->fetch()){
+					//andmebaasis oli midagi
+						echo "Email, username ja parool õiged, kasutaja id=".$id_from_db;
+					}else{
+						// ei leidnud
+						echo "Valed andmed!";
+				}
+				
+				$stmt->close();
+				
 		
 			}
 
@@ -84,6 +109,17 @@
 				$reg_email_error = "This field is required";
 			}
 		
+			if(	$reg_email_error == "" && $reg_password_error == "")
+				
+				// Räsi paroolist mis salvestame andmebaasi
+				$hash = hash("sha512", $reg_password);
+				
+				// Salvestame andmebaasi"
+				$stmt =  $mysqli->prepare("INSERT INTO martin_login2 (email, username, password) VALUES (?,?,?)");
+				// Asendame küsimärgid õigete andmetega
+				$stmt->bind_param("sss", $reg_email, $reg_username, $hash);
+				$stmt->execute();
+				$stmt->close();
 		}
 	}
 	
@@ -101,6 +137,10 @@
 	$page_title = "Sisselogimine";
 	$page_file_name = "login.php";
 	require_once("../header.php");
+	
+	// paneme ühenduse kinni
+	$mysqli->close();
+	
 ?>
 
 	<h2>Log in</h2>
