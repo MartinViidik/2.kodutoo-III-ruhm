@@ -90,6 +90,8 @@
 			
 			if (empty($_POST["reg_username"]) ) {
 				$reg_username_error = "This field is required";
+			}else{
+				$reg_username = cleanInput($_POST["reg_username"]);
 			}
 			
 			
@@ -103,11 +105,17 @@
 					
 					$reg_password_error = "Password must be at least 8 characters";
 					
+				}else{
+					$reg_password = cleanInput($_POST["reg_password"]);
 				}
+			
 			}
 			if (empty($_POST["reg_email"]) ) {
 				$reg_email_error = "This field is required";
+			}else{
+				$reg_email = cleanInput($_POST["reg_email"]);
 			}
+			
 		
 			if(	$reg_email_error == "" && $reg_password_error == "")
 				
@@ -124,7 +132,7 @@
 	}
 	
 	
-	function test_input($data) {
+	function cleanInput($data) {
 		// võtab ära tühikud, enterid, tabid
 		$data = trim($data);
 		// tagurpidi kaldkriipsud
